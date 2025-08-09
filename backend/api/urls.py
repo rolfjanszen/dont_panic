@@ -1,7 +1,9 @@
 from django.urls import path
-from .views import stock_plot, candle_stick_data
+from .views import stock_plot, candle_stick_data, rsi_plot
 
 urlpatterns = [
     path('stock/', stock_plot),
     path('candle_stick/', candle_stick_data),
+    path('rsi_plot/', rsi_plot)
 ]
+

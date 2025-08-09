@@ -10,9 +10,9 @@ from influxdb_client.client.flux_table import FluxTable, FluxRecord,TableList
 from matplotlib import pyplot as plt
 
 DATA_FILE = "data.csv"
-API_TOKEN="Pym_0XIdUpnWNw1gEt-rQFLmxj7ef6oFttcmhYNgNEHPRcxqMJc22poEhZ6M9ngUtQIrcaGICKKjfQintRzReA=="
+API_TOKEN="Pym_0XIdUpnWNw1gEt-rQFLmxj7ef6oFttcmhNgNEHPRcxqMJc22poEhZ6M9ngUtQIrcaGICKKjfQintRzReA=="
 tick_symbol = "QQQ"
-TOKEN ="72FlZacWvEUIy4R_2AYF0ebWlyYLDGWLsqDix-QNRtO_eyCg9gtFPqqXhzgE5OHsujGwOMFJ3MRHIxN6BMfHYA=="
+TOKEN ="-QNRtO_eyCg9gtFPqqXhzgE5OHsujGwOMFJ3MRHIxN6BMfHYA=="
 
 start = datetime.datetime(2020,1,1)
 end = datetime.datetime.now()

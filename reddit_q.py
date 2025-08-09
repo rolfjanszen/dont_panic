@@ -9,9 +9,9 @@ from bs4 import BeautifulSoup
 import pickle as pkl
 # Optional: Reddit API credentials (for fetching full post data)
 USE_PRAW = True  # Set True if you want to enrich results using PRAW
-REDDIT_CLIENT_ID = 'XF9l_UXAJp-1MZChILPdGA'
-REDDIT_CLIENT_SECRET = 'BGYw0-6enQIW2V_E57iPvJs1U9zFCA'
-REDDIT_USER_AGENT = 'Specialist-Tea-3777'
+REDDIT_CLIENT_ID = 'XF9l_UXAJChILPdGA'
+REDDIT_CLIENT_SECRET = 'BGYw0-'
+REDDIT_USER_AGENT = 'Specialist--3777'
 reddit = praw.Reddit(
         client_id=REDDIT_CLIENT_ID,
         client_secret=REDDIT_CLIENT_SECRET,

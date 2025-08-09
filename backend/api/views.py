@@ -98,7 +98,6 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     rsi[:period] =0
 
-    rsi=rsi[period:]
     rsi_colors = ['green' if r < 30 else 'red' if r > 70 else 'black' for r in rsi]
     return rsi, rsi_colors
 
@@ -116,24 +115,8 @@ def create_bars(open, close):
 
 @api_view(['POST'])
 def candle_stick_data(request):
-    ticker = request.data.get("ticker", "AAPL")
-    start = request.data.get("start")
-    end = request.data.get("end")
-    print("ticker",ticker)
-    if not end:
-        end = datetime.today().strftime('%Y-%m-%d')
-    if not start:
-        start = (datetime.strptime(end, '%Y-%m-%d') - timedelta(days=365)).strftime('%Y-%m-%d')
-
-    # Download data
-    # data = yf.download(ticker, start=start, end=end)
-
-    queryset=return_data_len(ticker, start, end)
-    if not queryset.count(): 
-        fetch_and_store_quotes(ticker, start, end)
-
-    # data = queryset.values('date', 'open', 'high', 'low', 'close', 'volume')
-    if not queryset.count():
+    queryset=get_query_start_end(request)
+    if queryset is None: 
         return Response({'error': 'No data found'}, status=404)
     # Format the response with dates and prices
     dates_str =[d['date'].strftime('%Y-%m-%d') for d in queryset.values('date')]
@@ -144,7 +127,6 @@ def candle_stick_data(request):
   
     
     response_data = {
-        'ticker': ticker,
         'dates_str': dates_str,
         'open_prices':prices_open,
         'close_prices':prices_close,
@@ -154,9 +136,66 @@ def candle_stick_data(request):
 
     return Response(response_data)
 
-
 @api_view(['POST'])
-def stock_plot(request):    
+def rsi_plot(request):    
+
+
+    ticker = request.data.get("ticker", "AAPL")
+    start = request.data.get("start")
+    end = request.data.get("end")
+    rsi_period = request.data.get("rsi_period")
+    print("ticker",ticker)
+    rsi_period_pad=rsi_period*3
+    if not end:
+        end = datetime.today().strftime('%Y-%m-%d')
+    if not start:
+        start = (datetime.strptime(end, '%Y-%m-%d') - timedelta(days=365)).strftime('%Y-%m-%d')
+
+    start_padded=(datetime.strptime(start, '%Y-%m-%d') -timedelta(days=rsi_period_pad)).strftime('%Y-%m-%d')
+
+    # Download data
+    # data = yf.download(ticker, start=start, end=end)
+
+    queryset=return_data_len(ticker, start_padded, end)
+    if not queryset.count(): 
+        return Response({'error': 'No data found'}, status=404)
+
+    # data = queryset.values('date', 'open', 'high', 'low', 'close', 'volume')
+    if not queryset.count():
+        return Response({'error': 'No data found'}, status=404)
+    # data = queryset.values('date', 'open', 'high', 'low', 'close', 'volume')
+    # Format the response with dates and prices
+    dates_str =[d['date'].strftime('%Y-%m-%d') for d in queryset.values('date')]
+    idx_start_date =None
+    for i in range(rsi_period_pad):
+
+        try:
+            idx_start_date = dates_str.index(start)
+        except:
+            start = (datetime.strptime(start, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+
+        if idx_start_date is not None:
+            break
+
+    if idx_start_date is None or idx_start_date < rsi_period:
+        Response(status=501, context="please try another date, market seemed closed over to long a period. Could no sufficiently pad the date period")
+    prices_close = [d['close'] for d in queryset.values('close')]
+
+    rsi_data, rsi_colors = calculate_rsi(prices_close,rsi_period)
+    # prices_close=prices_close[rsi_period:]
+    # prices_open=prices_open[rsi_period:]
+    rsi_data=rsi_data[idx_start_date:]
+    dates_str=dates_str[idx_start_date:]
+    
+    response_data = {
+        'rsi':rsi_data,
+        'rsi_dates':dates_str,
+        'rsi_colors':rsi_colors,
+    }
+
+    return Response(response_data)
+
+def get_query_start_end(request):
     ticker = request.data.get("ticker", "AAPL")
     start = request.data.get("start")
     end = request.data.get("end")
@@ -171,7 +210,28 @@ def stock_plot(request):
 
     queryset=return_data_len(ticker, start, end)
     if not queryset.count(): 
-        fetch_and_store_quotes(ticker, start, end)
+        return None
+    
+    return queryset
+
+
+@api_view(['POST'])
+def stock_plot(request):    
+    # ticker = request.data.get("ticker", "AAPL")
+    # start = request.data.get("start")
+    # end = request.data.get("end")
+    # print("ticker",ticker)
+    # if not end:
+    #     end = datetime.today().strftime('%Y-%m-%d')
+    # if not start:
+    #     start = (datetime.strptime(end, '%Y-%m-%d') - timedelta(days=365)).strftime('%Y-%m-%d')
+
+    # # Download data
+    # # data = yf.download(ticker, start=start, end=end)
+
+    queryset=get_query_start_end(request)
+    if queryset is None: 
+        return Response({'error': 'No data found'}, status=404)
 
     # data = queryset.values('date', 'open', 'high', 'low', 'close', 'volume')
     rsi_period = 14
@@ -182,20 +242,19 @@ def stock_plot(request):
     dates_str =[d['date'].strftime('%Y-%m-%d') for d in queryset.values('date')]
     prices_close = [d['close'] for d in queryset.values('close')]
     prices_open = [d['open'] for d in queryset.values('open')]
-    prices_high = [d['high'] for d in queryset.values('high')]
-    prices_low = [d['low'] for d in queryset.values('low')]
-    rsi_data, rsi_colors = calculate_rsi(prices_close,rsi_period)
+    # prices_high = [d['high'] for d in queryset.values('high')]
+    # prices_low = [d['low'] for d in queryset.values('low')]
+    # rsi_data, rsi_colors = calculate_rsi(prices_close,rsi_period)
     # prices_close=prices_close[rsi_period:]
     # prices_open=prices_open[rsi_period:]
     start_point, lengths, colors=create_bars(prices_open, prices_close)
    
     
     response_data = {
-        'ticker': ticker,
         'dates': dates_str,
-        'rsi':rsi_data,
+        # 'rsi':rsi_data,
         'rsi_dates':dates_str[rsi_period:],
-        'rsi_colors':rsi_colors,
+        'prices_close':prices_close,
         'bar_start':start_point, 
         'bar_lengths':lengths, 
         'bar_colors':colors
